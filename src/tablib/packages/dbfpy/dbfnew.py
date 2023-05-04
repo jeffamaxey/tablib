@@ -141,9 +141,8 @@ class dbf_new:
         for _fldDef in self.fields:
             _fldDef.appendToHeader(_dbfh)
 
-        _dbfStream = open(filename, "wb")
-        _dbfh.write(_dbfStream)
-        _dbfStream.close()
+        with open(filename, "wb") as _dbfStream:
+            _dbfh.write(_dbfStream)
 
 
 if __name__ == '__main__':

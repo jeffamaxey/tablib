@@ -38,9 +38,8 @@ class DBFFormat:
             record.store()
 
         dbf_file.close()
-        dbf_stream = open(temp_uri, 'rb')
-        stream = io.BytesIO(dbf_stream.read())
-        dbf_stream.close()
+        with open(temp_uri, 'rb') as dbf_stream:
+            stream = io.BytesIO(dbf_stream.read())
         os.close(temp_file)
         os.remove(temp_uri)
         return stream.getvalue()

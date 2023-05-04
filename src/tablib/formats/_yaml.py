@@ -48,10 +48,7 @@ class YAMLFormat:
         """Returns True if given stream is valid YAML."""
         try:
             _yaml = yaml.safe_load(stream)
-            if isinstance(_yaml, (list, tuple, dict)):
-                return True
-            else:
-                return False
+            return isinstance(_yaml, (list, tuple, dict))
         except (yaml.parser.ParserError, yaml.reader.ReaderError,
                 yaml.scanner.ScannerError):
             return False

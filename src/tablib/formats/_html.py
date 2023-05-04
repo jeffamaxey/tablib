@@ -54,7 +54,7 @@ class HTMLFormat:
         wrapper = codecs.getwriter("utf8")(stream)
 
         for i, dset in enumerate(databook._datasets):
-            title = (dset.title if dset.title else 'Set %s' % (i))
+            title = dset.title if dset.title else f'Set {i}'
             wrapper.write(f'<{cls.BOOK_ENDINGS}>{title}</{cls.BOOK_ENDINGS}>\n')
             wrapper.write(dset.html)
             wrapper.write('\n')

@@ -102,7 +102,7 @@ def getDateTime(value=None):
     """
     if value is None:
         # use current value
-        return datetime.datetime.today()
+        return datetime.datetime.now()
     if isinstance(value, datetime.datetime):
         return value
     if isinstance(value, datetime.date):

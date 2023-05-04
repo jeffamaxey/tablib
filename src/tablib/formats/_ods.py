@@ -36,7 +36,7 @@ class ODSFormat:
         wb.automaticstyles.addElement(bold)
 
         for i, dset in enumerate(databook._datasets):
-            ws = table.Table(name=dset.title if dset.title else 'Sheet%s' % (i))
+            ws = table.Table(name=dset.title if dset.title else f'Sheet{i}')
             wb.spreadsheet.addElement(ws)
             cls.dset_sheet(dset, ws)
 
@@ -56,7 +56,7 @@ class ODSFormat:
         for i, row in enumerate(_package):
             row_number = i + 1
             odf_row = table.TableRow(stylename=bold, defaultcellstylename='bold')
-            for j, col in enumerate(row):
+            for col in row:
                 try:
                     col = str(col, errors='ignore')
                 except TypeError:
@@ -74,19 +74,12 @@ class ODSFormat:
                     cell.addElement(p)
                     odf_row.addElement(cell)
 
-                # wrap the rest
                 else:
                     try:
-                        if '\n' in col:
-                            ws.addElement(odf_row)
-                            cell = table.TableCell()
-                            cell.addElement(text.P(text=col))
-                            odf_row.addElement(cell)
-                        else:
-                            ws.addElement(odf_row)
-                            cell = table.TableCell()
-                            cell.addElement(text.P(text=col))
-                            odf_row.addElement(cell)
+                        ws.addElement(odf_row)
+                        cell = table.TableCell()
+                        cell.addElement(text.P(text=col))
+                        odf_row.addElement(cell)
                     except TypeError:
                         ws.addElement(odf_row)
                         cell = table.TableCell()

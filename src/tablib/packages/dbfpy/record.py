@@ -85,7 +85,7 @@ class DbfRecord:
     position = property(lambda self: self.dbf.header.headerLength + \
                         self.index * self.dbf.header.recordLength)
 
-    def rawFromStream(cls, dbf, index):
+    def rawFromStream(self, dbf, index):
         """Return raw record contents read from the stream.
 
         Arguments:
@@ -106,7 +106,7 @@ class DbfRecord:
         return dbf.stream.read(dbf.header.recordLength)
     rawFromStream = classmethod(rawFromStream)
 
-    def fromStream(cls, dbf, index):
+    def fromStream(self, dbf, index):
         """Return a record read from the stream.
 
         Arguments:
@@ -119,10 +119,10 @@ class DbfRecord:
         Return value is an instance of the current class.
 
         """
-        return cls.fromString(dbf, cls.rawFromStream(dbf, index), index)
+        return self.fromString(dbf, self.rawFromStream(dbf, index), index)
     fromStream = classmethod(fromStream)
 
-    def fromString(cls, dbf, string, index=None):
+    def fromString(self, dbf, string, index=None):
         """Return record read from the string object.
 
         Arguments:
@@ -137,8 +137,12 @@ class DbfRecord:
         Return value is an instance of the current class.
 
         """
-        return cls(dbf, index, string[0]=="*",
-                   [_fd.decodeFromRecord(string) for _fd in dbf.header.fields])
+        return self(
+            dbf,
+            index,
+            string[0] == "*",
+            [_fd.decodeFromRecord(string) for _fd in dbf.header.fields],
+        )
     fromString = classmethod(fromString)
 
     # object representation
@@ -193,7 +197,7 @@ class DbfRecord:
             if not allowUndefined:
                 raise ValueError("Index is undefined")
         elif self.index < 0:
-            raise ValueError("Index can't be negative (%s)" % self.index)
+            raise ValueError(f"Index can't be negative ({self.index})")
         elif checkRange and self.index <= self.dbf.header.recordCount:
             raise ValueError("There are only %d records in the DBF" %
                              self.dbf.header.recordCount)
@@ -246,7 +250,7 @@ class DbfRecord:
             real values stored in this object.
 
         """
-        return dict([_i for _i in zip(self.dbf.fieldNames, self.fieldData)])
+        return dict(list(zip(self.dbf.fieldNames, self.fieldData)))
 
     def __getitem__(self, key):
         """Return value by field name or field index."""

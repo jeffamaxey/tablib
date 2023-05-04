@@ -81,10 +81,7 @@ class DbfHeader:
 
         """
         self.signature = signature
-        if fields is None:
-            self.fields = []
-        else:
-            self.fields = list(fields)
+        self.fields = [] if fields is None else list(fields)
         self.lastUpdate = getDate(lastUpdate)
         self.recordLength = recordLength
         self.headerLength = headerLength
@@ -95,13 +92,13 @@ class DbfHeader:
         self.changed = bool(self.fields)
 
     # @classmethod
-    def fromString(cls, string):
+    def fromString(self, string):
         """Return header instance from the string object."""
-        return cls.fromStream(io.StringIO(str(string)))
+        return self.fromStream(io.StringIO(str(string)))
     fromString = classmethod(fromString)
 
     # @classmethod
-    def fromStream(cls, stream):
+    def fromStream(self, stream):
         """Return header object from the stream."""
         stream.seek(0)
         first_32 = stream.read(32)
@@ -111,15 +108,11 @@ class DbfHeader:
         (_cnt, _hdrLen, _recLen) = struct.unpack("<I2H", _data[4:12])
         # reserved = _data[12:32]
         _year = _data[1]
-        if _year < 80:
-            # dBase II started at 1980.  It is quite unlikely
-            # that actual last update date is before that year.
-            _year += 2000
-        else:
-            _year += 1900
+        _year += 2000 if _year < 80 else 1900
         # create header object
-        _obj = cls(None, _hdrLen, _recLen, _cnt, _data[0],
-                   (_year, _data[2], _data[3]))
+        _obj = self(
+            None, _hdrLen, _recLen, _cnt, _data[0], (_year, _data[2], _data[3])
+        )
         # append field definitions
         # position 0 is for the deletion flag
         _pos = 1
@@ -256,15 +249,14 @@ Version (signature): 0x%02x
 
     def __getitem__(self, item):
         """Return a field definition by numeric index or name string"""
-        if isinstance(item, str):
-            _name = item.upper()
-            for _field in self.fields:
-                if _field.name == _name:
-                    return _field
-            else:
-                raise KeyError(item)
-        else:
+        if not isinstance(item, str):
             # item must be field index
             return self.fields[item]
+        _name = item.upper()
+        for _field in self.fields:
+            if _field.name == _name:
+                return _field
+        else:
+            raise KeyError(item)
 
 # vim: et sts=4 sw=4 :

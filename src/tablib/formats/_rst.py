@@ -12,9 +12,7 @@ JUSTIFY_VALUES = (JUSTIFY_LEFT, JUSTIFY_CENTER, JUSTIFY_RIGHT)
 
 
 def to_str(value):
-    if isinstance(value, bytes):
-        return value.decode('utf-8')
-    return str(value)
+    return value.decode('utf-8') if isinstance(value, bytes) else str(value)
 
 
 def _max_word_len(text):
@@ -59,18 +57,18 @@ class ReSTFormat:
         Returns a table row of wrapped values as a list of lines
         """
         if justify not in JUSTIFY_VALUES:
-            raise ValueError('Value of "justify" must be one of "{}"'.format(
-                '", "'.join(JUSTIFY_VALUES)
-            ))
+            raise ValueError(
+                f"""Value of "justify" must be one of "{'", "'.join(JUSTIFY_VALUES)}\""""
+            )
         if justify == JUSTIFY_LEFT:
             just = lambda text, width: text.ljust(width)
         elif justify == JUSTIFY_CENTER:
             just = lambda text, width: text.center(width)
         else:
             just = lambda text, width: text.rjust(width)
-        lpad = sep + ' ' if sep else ''
-        rpad = ' ' + sep if sep else ''
-        pad = ' ' + sep + ' '
+        lpad = f'{sep} ' if sep else ''
+        rpad = f' {sep}' if sep else ''
+        pad = f' {sep} '
         cells = []
         for value, width in zip(values, widths):
             wrapper.width = width
@@ -97,7 +95,7 @@ class ReSTFormat:
         if total > max_table_width - (pad_len * len(median_lens)):
             column_widths = (max_table_width * l // total for l in median_lens)
         else:
-            column_widths = (l for l in median_lens)
+            column_widths = iter(median_lens)
         # Allow for separator and padding:
         column_widths = (w - pad_len if w > pad_len else w for w in column_widths)
         # Rather widen table than break words:
@@ -109,13 +107,12 @@ class ReSTFormat:
         """
         Returns reStructuredText grid table representation of dataset.
         """
-        lines = []
         wrapper = TextWrapper()
         if column_widths is None:
             column_widths = cls._get_column_widths(dataset, pad_len=2)
         border = '  '.join(['=' * w for w in column_widths])
 
-        lines.append(border)
+        lines = [border]
         if dataset.headers:
             lines.extend(cls._row_to_lines(
                 dataset.headers,
@@ -160,15 +157,13 @@ class ReSTFormat:
         +-------+-------+-------+
 
         """
-        lines = []
         wrapper = TextWrapper()
         if column_widths is None:
             column_widths = cls._get_column_widths(dataset)
         header_sep = '+=' + '=+='.join(['=' * w for w in column_widths]) + '=+'
         row_sep = '+-' + '-+-'.join(['-' * w for w in column_widths]) + '-+'
 
-        lines.append(row_sep)
-
+        lines = [row_sep]
         if dataset.headers:
             lines.extend(cls._row_to_lines(
                 dataset.headers,

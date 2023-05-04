@@ -116,13 +116,7 @@ class Dbf:
         if isinstance(f, str):
             # a filename
             self.name = f
-            if new:
-                # new table (table file must be
-                # created or opened and truncated)
-                self.stream = open(f, "w+b")
-            else:
-                # table file must exist
-                self.stream = open(f, ("r+b", "rb")[bool(readOnly)])
+            self.stream = open(f, "w+b") if new else open(f, ("r+b", "rb")[bool(readOnly)])
         else:
             # a stream
             self.name = getattr(f, "name", "")

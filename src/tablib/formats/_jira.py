@@ -33,8 +33,4 @@ class JIRAFormat:
 
     @classmethod
     def _serialize_row(cls, row, delimiter='|'):
-        return '{}{}{}'.format(
-            delimiter,
-            delimiter.join([str(item) if item else ' ' for item in row]),
-            delimiter
-        )
+        return f"{delimiter}{delimiter.join([str(item) if item else ' ' for item in row])}{delimiter}"

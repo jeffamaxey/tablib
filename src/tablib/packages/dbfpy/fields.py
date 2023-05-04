@@ -85,10 +85,10 @@ class DbfFieldDef:
         name = str(name).upper()
         if self.__class__.length is None:
             if length is None:
-                raise ValueError("[%s] Length isn't specified" % name)
+                raise ValueError(f"[{name}] Length isn't specified")
             length = int(length)
             if length <= 0:
-                raise ValueError("[%s] Length must be a positive integer" % name)
+                raise ValueError(f"[{name}] Length must be a positive integer")
         else:
             length = self.length
         if decimalCount is None:
@@ -115,7 +115,7 @@ class DbfFieldDef:
     def __hash__(self):
         return hash(self.name)
 
-    def fromString(cls, string, start, ignoreErrors=False):
+    def fromString(self, string, start, ignoreErrors=False):
         """Decode dbf field definition from the string data.
 
         Arguments:
@@ -130,8 +130,14 @@ class DbfFieldDef:
         """
         assert len(string) == 32
         _length = string[16]
-        return cls(utils.unzfill(string)[:11].decode('utf-8'), _length,
-            string[17], start, start + _length, ignoreErrors=ignoreErrors)
+        return self(
+            utils.unzfill(string)[:11].decode('utf-8'),
+            _length,
+            string[17],
+            start,
+            start + _length,
+            ignoreErrors=ignoreErrors,
+        )
     fromString = classmethod(fromString)
 
     def toString(self):
@@ -327,9 +333,7 @@ class DbfLogicalFieldDef(DbfFieldDef):
         """
         if value is True:
             return "T"
-        if value == -1:
-            return "?"
-        return "F"
+        return "?" if value == -1 else "F"
 
 
 class DbfMemoFieldDef(DbfFieldDef):
@@ -368,10 +372,7 @@ class DbfDateFieldDef(DbfFieldDef):
 
     def decodeValue(self, value):
         """Return a ``datetime.date`` instance decoded from ``value``."""
-        if value.strip():
-            return utils.getDate(value)
-        else:
-            return None
+        return utils.getDate(value) if value.strip() else None
 
     def encodeValue(self, value):
         """Return a string-encoded value.
@@ -383,10 +384,7 @@ class DbfDateFieldDef(DbfFieldDef):
             Return value is a string in format "yyyymmdd".
 
         """
-        if value:
-            return utils.getDate(value).strftime("%Y%m%d")
-        else:
-            return " " * self.length
+        return utils.getDate(value).strftime("%Y%m%d") if value else " " * self.length
 
 
 class DbfDateTimeFieldDef(DbfFieldDef):

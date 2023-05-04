@@ -119,7 +119,7 @@ class TablibTestCase(BaseTestCase):
 
         data.append_col(new_col)
 
-        self.assertEqual(data[0], tuple([new_col[0]]))
+        self.assertEqual(data[0], (new_col[0], ))
         self.assertEqual(data.width, 1)
         self.assertEqual(data.height, len(new_col))
 
@@ -132,7 +132,7 @@ class TablibTestCase(BaseTestCase):
 
         data.append_col(new_col, header='first_name')
 
-        self.assertEqual(data[0], tuple([new_col[0]]))
+        self.assertEqual(data[0], (new_col[0], ))
         self.assertEqual(data.width, 1)
         self.assertEqual(data.height, len(new_col))
         self.assertEqual(data.headers, None)
@@ -214,7 +214,7 @@ class TablibTestCase(BaseTestCase):
 
         # Slice multiple rows
         self.assertEqual(self.founders[:], [self.john, self.george, self.tom])
-        self.assertEqual(self.founders[0:2], [self.john, self.george])
+        self.assertEqual(self.founders[:2], [self.john, self.george])
         self.assertEqual(self.founders[1:3], [self.george, self.tom])
         self.assertEqual(self.founders[2:], [self.tom])
 
@@ -224,10 +224,10 @@ class TablibTestCase(BaseTestCase):
         john = Row(self.john)
 
         self.assertEqual(john[:], list(self.john[:]))
-        self.assertEqual(john[0:], list(self.john[0:]))
+        self.assertEqual(john[:], list(self.john[:]))
         self.assertEqual(john[:2], list(self.john[:2]))
-        self.assertEqual(john[0:2], list(self.john[0:2]))
-        self.assertEqual(john[0:-1], list(self.john[0:-1]))
+        self.assertEqual(john[:2], list(self.john[:2]))
+        self.assertEqual(john[:-1], list(self.john[:-1]))
 
     def test_delete(self):
         """Verify deleting from dataset works."""
@@ -253,7 +253,7 @@ class TablibTestCase(BaseTestCase):
 
     def test_str_no_columns(self):
         d = tablib.Dataset(['a', 1], ['b', 2], ['c', 3])
-        output = '%s' % d
+        output = f'{d}'
 
         self.assertEqual(output.splitlines(), [
             'a|1',
@@ -272,18 +272,15 @@ class TablibTestCase(BaseTestCase):
     def test_datetime_append(self):
         """Passes in a single datetime and a single date and exports."""
 
-        new_row = (
-            datetime.datetime.now(),
-            datetime.datetime.today(),
-        )
+        new_row = datetime.datetime.now(), datetime.datetime.now()
 
         data.append(new_row)
         self._test_export_data_in_all_formats(data)
 
     def test_separator_append(self):
-        for a in range(3):
+        for _ in range(3):
             data.append_separator('foobar')
-            for a in range(5):
+            for _ in range(5):
                 data.append(['asdf', 'asdf', 'asdf'])
         self._test_export_data_in_all_formats(data)
 
@@ -835,16 +832,12 @@ class CSVTests(BaseTestCase):
     def test_csv_export(self):
         """Verify exporting dataset object as CSV."""
 
-        # Build up the csv string with headers first, followed by each row
-        csv = ''
-        for col in self.headers:
-            csv += col + ','
-
+        csv = ''.join(f'{col},' for col in self.headers)
         csv = csv.strip(',') + '\r\n'
 
         for founder in self.founders:
             for col in founder:
-                csv += str(col) + ','
+                csv += f'{str(col)},'
             csv = csv.strip(',') + '\r\n'
 
         self.assertEqual(csv, self.founders.csv)
@@ -858,16 +851,12 @@ class CSVTests(BaseTestCase):
     def test_csv_stream_export(self):
         """Verify exporting dataset object as CSV from file object."""
 
-        # Build up the csv string with headers first, followed by each row
-        csv = ''
-        for col in self.headers:
-            csv += col + ','
-
+        csv = ''.join(f'{col},' for col in self.headers)
         csv = csv.strip(',') + '\r\n'
 
         for founder in self.founders:
             for col in founder:
-                csv += str(col) + ','
+                csv += f'{str(col)},'
             csv = csv.strip(',') + '\r\n'
 
         frm = registry.get_format('csv')
@@ -975,11 +964,7 @@ class TSVTests(BaseTestCase):
     def test_tsv_export(self):
         """Verify exporting dataset object as TSV."""
 
-        # Build up the tsv string with headers first, followed by each row
-        tsv = ''
-        for col in self.headers:
-            tsv += col + '\t'
-
+        tsv = ''.join(col + '\t' for col in self.headers)
         tsv = tsv.strip('\t') + '\r\n'
 
         for founder in self.founders:
@@ -1289,14 +1274,13 @@ class DBFTests(BaseTestCase):
         try:
             self.assertEqual(_dbf, data.dbf)
         except AssertionError:
-            index = 0
             so_far = ''
-            for reg_char, data_char in zip(_dbf, data.dbf):
+            for index, (reg_char, data_char) in enumerate(zip(_dbf, data.dbf)):
                 so_far += chr(data_char)
                 if reg_char != data_char and index not in [1, 2, 3]:
-                    raise AssertionError('Failing at char {}: {} vs {} {}'.format(
-                        index, reg_char, data_char, so_far))
-                index += 1
+                    raise AssertionError(
+                        f'Failing at char {index}: {reg_char} vs {data_char} {so_far}'
+                    )
 
     def test_dbf_export_set(self):
         """Test DBF import."""
@@ -1331,15 +1315,13 @@ class DBFTests(BaseTestCase):
         try:
             self.assertEqual(_regression_dbf, data.dbf)
         except AssertionError:
-            index = 0
             found_so_far = ''
-            for reg_char, data_char in zip(_regression_dbf, data.dbf):
+            for index, (reg_char, data_char) in enumerate(zip(_regression_dbf, data.dbf)):
                 # found_so_far += chr(data_char)
                 if reg_char != data_char and index not in [1, 2, 3]:
                     raise AssertionError(
-                        'Failing at char {}: {} vs {} (found {})'.format(
-                            index, reg_char, data_char, found_so_far))
-                index += 1
+                        f'Failing at char {index}: {reg_char} vs {data_char} (found {found_so_far})'
+                    )
 
     def test_dbf_format_detect(self):
         """Test the DBF format detection."""

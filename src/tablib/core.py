@@ -39,7 +39,7 @@ class Row:
         self.tags = list(tags)
 
     def __iter__(self):
-        return (col for col in self._row)
+        return iter(self._row)
 
     def __len__(self):
         return len(self._row)
@@ -146,7 +146,7 @@ class Dataset:
     """
 
     def __init__(self, *args, **kwargs):
-        self._data = list(Row(arg) for arg in args)
+        self._data = [Row(arg) for arg in args]
         self.__headers = None
 
         # ('title', index) tuples
@@ -164,11 +164,10 @@ class Dataset:
 
     def __getitem__(self, key):
         if isinstance(key, str):
-            if key in self.headers:
-                pos = self.headers.index(key)  # get 'key' index from each data
-                return [row[pos] for row in self._data]
-            else:
+            if key not in self.headers:
                 raise KeyError
+            pos = self.headers.index(key)  # get 'key' index from each data
+            return [row[pos] for row in self._data]
         else:
             _results = self._data[key]
             if isinstance(_results, Row):
@@ -183,23 +182,21 @@ class Dataset:
     def __delitem__(self, key):
         if isinstance(key, str):
 
-            if key in self.headers:
-
-                pos = self.headers.index(key)
-                del self.headers[pos]
-
-                for i, row in enumerate(self._data):
-
-                    del row[pos]
-                    self._data[i] = row
-            else:
+            if key not in self.headers:
                 raise KeyError
+            pos = self.headers.index(key)
+            del self.headers[pos]
+
+            for i, row in enumerate(self._data):
+
+                del row[pos]
+                self._data[i] = row
         else:
             del self._data[key]
 
     def __repr__(self):
         try:
-            return '<%s dataset>' % (self.title.lower())
+            return f'<{self.title.lower()} dataset>'
         except AttributeError:
             return '<dataset object>'
 
@@ -249,10 +246,9 @@ class Dataset:
 
         if is_valid:
             return True
-        else:
-            if not safety:
-                raise InvalidDimensions
-            return False
+        if not safety:
+            raise InvalidDimensions
+        return False
 
     def _package(self, dicts=True, ordered=True):
         """Packages Dataset into lists of dictionaries for transmission."""
@@ -260,11 +256,7 @@ class Dataset:
 
         _data = list(self._data)
 
-        if ordered:
-            dict_pack = OrderedDict
-        else:
-            dict_pack = dict
-
+        dict_pack = OrderedDict if ordered else dict
         # Execute formatters
         if self._formatters:
             for row_i, row in enumerate(_data):
@@ -279,14 +271,16 @@ class Dataset:
                         raise InvalidDatasetIndex
 
         if self.headers:
-            if dicts:
-                data = [dict_pack(list(zip(self.headers, data_row))) for data_row in _data]
-            else:
-                data = [list(self.headers)] + list(_data)
+            return (
+                [
+                    dict_pack(list(zip(self.headers, data_row)))
+                    for data_row in _data
+                ]
+                if dicts
+                else [list(self.headers)] + list(_data)
+            )
         else:
-            data = [list(row) for row in _data]
-
-        return data
+            return [list(row) for row in _data]
 
     def _get_headers(self):
         """An *optional* list of strings to be used for header rows and attribute names.
@@ -359,11 +353,7 @@ class Dataset:
 
         col = list(col)
 
-        if self.headers:
-            header = [col.pop(0)]
-        else:
-            header = []
-
+        header = [col.pop(0)] if self.headers else []
         if len(col) == 1 and hasattr(col[0], '__call__'):
 
             col = list(map(col[0], self._data))
@@ -540,8 +530,7 @@ class Dataset:
             if not header:
                 raise HeadersNeeded()
 
-            # corner case - if header is set without data
-            elif header and self.height == 0 and len(col):
+            elif self.height == 0 and len(col):
                 raise InvalidDimensions
 
             self.headers.insert(index, header)
@@ -663,10 +652,7 @@ class Dataset:
             _dset = Dataset(headers=self.headers, title=self.title)
 
             for item in _sorted:
-                if self.headers:
-                    row = [item[key] for key in self.headers]
-                else:
-                    row = item
+                row = [item[key] for key in self.headers] if self.headers else item
                 _dset.append(row=row)
 
         return _dset
@@ -713,8 +699,8 @@ class Dataset:
         # Copy the source data
         _dset = copy(self)
 
-        rows_to_stack = [row for row in _dset._data]
-        other_rows = [row for row in other._data]
+        rows_to_stack = list(_dset._data)
+        other_rows = list(other._data)
 
         rows_to_stack.extend(other_rows)
         _dset._data = rows_to_stack
@@ -730,9 +716,10 @@ class Dataset:
         if not isinstance(other, Dataset):
             return
 
-        if self.headers or other.headers:
-            if not self.headers or not other.headers:
-                raise HeadersNeeded
+        if (self.headers or other.headers) and (
+            not self.headers or not other.headers
+        ):
+            raise HeadersNeeded
 
         if self.height != other.height:
             raise InvalidDimensions
@@ -762,7 +749,7 @@ class Dataset:
 
     def wipe(self):
         """Removes all content and headers from the :class:`Dataset` object."""
-        self._data = list()
+        self._data = []
         self.__headers = None
 
     def subset(self, rows=None, cols=None):
@@ -814,7 +801,7 @@ class Databook:
 
     def __repr__(self):
         try:
-            return '<%s databook>' % (self.title.lower())
+            return f'<{self.title.lower()} databook>'
         except AttributeError:
             return '<databook object>'
 
@@ -834,19 +821,11 @@ class Databook:
 
     def _package(self, ordered=True):
         """Packages :class:`Databook` for delivery."""
-        collector = []
-
-        if ordered:
-            dict_pack = OrderedDict
-        else:
-            dict_pack = dict
-
-        for dset in self._datasets:
-            collector.append(dict_pack(
-                title=dset.title,
-                data=dset._package(ordered=ordered)
-            ))
-        return collector
+        dict_pack = OrderedDict if ordered else dict
+        return [
+            dict_pack(title=dset.title, data=dset._package(ordered=ordered))
+            for dset in self._datasets
+        ]
 
     @property
     def size(self):
